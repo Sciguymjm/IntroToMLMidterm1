@@ -58,7 +58,19 @@ if __name__ == '__main__':
     cov2 = np.array(cov2)
     sampled_values = ((np.random.rand(1000, 2,1) - 0.5) * 40)
     samples = []
+
+    delta = 0.125
+    x = np.arange(-10.0, 10.0, delta)
+    y = np.arange(-10.0, 10.0, delta)
+    results = np.zeros((x.shape[0], y.shape[0]))
+    X, Y = np.meshgrid(x, y)
+    sampled_values = []
+    for i in range(len(X)):
+        for j in range(len(Y)):
+            sampled_values.append([[i, j], [X[i, j], Y[i, j]]])
     for sampled_value in sampled_values:
+        i, j = sampled_value[0]
+        sampled_value = np.array(sampled_value[1])[np.newaxis].T
         vals = []
         for mu, cov in zip([mu1, mu2], [cov1, cov2]):
             st1 = 1/(2 * np.math.pi * np.sqrt(np.linalg.det(cov)))
@@ -72,9 +84,13 @@ if __name__ == '__main__':
             # print('outer', outer)
             val = st1 * np.exp(-0.5 * outer)
             vals.append(val)
+        results[i, j] = vals[1] / vals[0]
         samples.append([sampled_value, vals])
     threshold = 1
     mpl(mu1.T[0], cov1, color='yellow')
     mpl(mu2.T[0], cov2, color='orange')
-    [plot_pt(sample, 1 if (val[1] / val[0]) > threshold else 0) for sample, val in samples]
+    # [plot_pt(sample, 1 if (val[1] / val[0]) > threshold else 0) for sample, val in samples]
+    c = plt.contour(X, Y, results, [10**x for x in np.arange(-2, 3, 0.5)], zorder=1000)
+    plt.clabel(c, inline=1, fontsize=5)
+    print (results)
     mpl_show()
