@@ -1,5 +1,8 @@
+import sys
+
 import matplotlib.pyplot as plt
 import numpy as np
+from scipy.special import erfinv
 
 
 def mpl(mean=None, cov=None, color='b'):
@@ -29,11 +32,24 @@ def multivar_normal(mu, cov, n):
 
 
 def normal(mu, r):
-    return np.random.normal(mu, r)
+    rand = np.random.rand()
+    x = np.sqrt(2) * r * erfinv(2 * rand - 1) + mu
+    return x
     y = np.random.rand()
     print(y)
     x = mu + np.sqrt(-(r ** 2) * (np.log(2 * np.math.pi) - 2 * np.log(1 / (r * y))))
     return x
+
+
+def test_custom_normal():
+    data = [normal(0, 1) for x in range(10000)]
+    print('std', np.std(data), 'mean', np.mean(data))
+    # plt.hist(data, bins=20)
+    # plt.show()
+
+
+def numpy_normal(mu, r):
+    return np.random.normal(mu, r)
 
 
 def prob(val, mu, rsq):
@@ -43,10 +59,11 @@ def prob(val, mu, rsq):
 
 
 def plot_pt(val, cls):
-    plt.plot(val[0], val[1], 'o', color='green' if cls==1 else 'red')
+    plt.plot(val[0], val[1], 'o', color='green' if cls == 1 else 'red')
 
 
 if __name__ == '__main__':
+    test_custom_normal()
     # multivar_normal([0,0], [0,0], 5000)
     mu1 = [[0., 0.]]
     mu2 = [[5., 5.]]
@@ -56,7 +73,7 @@ if __name__ == '__main__':
     mu2 = np.array(mu2).T
     cov1 = np.array(cov1)
     cov2 = np.array(cov2)
-    sampled_values = ((np.random.rand(1000, 2,1) - 0.5) * 40)
+    sampled_values = ((np.random.rand(1000, 2, 1) - 0.5) * 40)
     samples = []
 
     delta = 0.125
@@ -73,7 +90,7 @@ if __name__ == '__main__':
         sampled_value = np.array(sampled_value[1])[np.newaxis].T
         vals = []
         for mu, cov in zip([mu1, mu2], [cov1, cov2]):
-            st1 = 1/(2 * np.math.pi * np.sqrt(np.linalg.det(cov)))
+            st1 = 1 / (2 * np.math.pi * np.sqrt(np.linalg.det(cov)))
             # print('st1', st1)
             # print('(sampled_value - mu).transpose()', (sampled_value - mu).T)
             # print('np.linalg.inv(cov)', np.linalg.inv(cov))
@@ -90,7 +107,7 @@ if __name__ == '__main__':
     mpl(mu1.T[0], cov1, color='yellow')
     mpl(mu2.T[0], cov2, color='orange')
     # [plot_pt(sample, 1 if (val[1] / val[0]) > threshold else 0) for sample, val in samples]
-    c = plt.contour(X, Y, results, [10**x for x in np.arange(-2, 3, 0.5)], zorder=1000)
+    c = plt.contour(X, Y, results, [10 ** x for x in np.arange(-2, 3, 0.5)], zorder=1000)
     plt.clabel(c, inline=1, fontsize=5)
-    print (results)
+    print(results)
     mpl_show()
