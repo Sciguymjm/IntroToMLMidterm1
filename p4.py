@@ -59,7 +59,7 @@ def numpy_normal(mu, r):
     return np.random.normal(mu, r)
 
 
-def prob(val, mu, rsq):
+def smthn(val, mu, rsq):
     a = 1 / np.sqrt(2 * np.math.pi * rsq)
     p = a * np.exp(-(val * mu) ** 2 / (2 * rsq))
     return p
@@ -69,27 +69,45 @@ def plot_pt(val, cls):
     plt.plot(val[0], val[1], 'o', color='green' if cls == 1 else 'red')
 
 
+def plot_obs(val, cls, accurate):
+    plt.plot(val[0], val[1], 'o' if cls == 0 else 's', color='green' if accurate else 'red')
+
+
 mus = [
     [[0., 0.]],
-    [[2., 5.]]
+    [[5., 5.]]
 ]
 covs = [
     [[5., 0.], [0., 10.]],
     [[1., 0.], [0., 10.]]
 ]
 
+n = 2
+prob = [0.5, 0.5]
 
-def generate_sample_gmm():
-    n = 2
-    prob = [0.5, 0.5]
+
+def generate_sample_gmm() -> (np.ndarray, int):
     idx = np.arange(n)
     choice = np.random.choice(idx, p=prob)
     return np.random.multivariate_normal(mus[choice][0], covs[choice]), choice
 
 
+def pdf(sampled_value: np.ndarray, mu: np.ndarray, cov: np.ndarray) -> float:
+    st1 = 1 / (2 * np.math.pi * np.sqrt(np.linalg.det(cov)))
+    # print('st1', st1)
+    # print('(sampled_value - mu).transpose()', (sampled_value - mu).T)
+    # print('np.linalg.inv(cov)', np.linalg.inv(cov))
+    inner = np.matmul((sampled_value - mu).T, np.linalg.inv(cov))
+    # print('inner', inner)
+    # print('(sampled_value - mu)', (sampled_value - mu))
+    outer = np.matmul(inner, (sampled_value - mu))
+    # print('outer', outer)
+    val = st1 * np.exp(-0.5 * outer)
+    return val
+
 
 if __name__ == '__main__':
-    print (generate_sample_gmm())
+    print(generate_sample_gmm())
     test_custom_normal()
     # multivar_normal([0,0], [0,0], 5000)
 
@@ -112,16 +130,7 @@ if __name__ == '__main__':
         sampled_value = np.array(sampled_value[1])[np.newaxis].T
         vals = []
         for mu, cov in zip(mus_t, covs_t):
-            st1 = 1 / (2 * np.math.pi * np.sqrt(np.linalg.det(cov)))
-            # print('st1', st1)
-            # print('(sampled_value - mu).transpose()', (sampled_value - mu).T)
-            # print('np.linalg.inv(cov)', np.linalg.inv(cov))
-            inner = np.matmul((sampled_value - mu).T, np.linalg.inv(cov))
-            # print('inner', inner)
-            # print('(sampled_value - mu)', (sampled_value - mu))
-            outer = np.matmul(inner, (sampled_value - mu))
-            # print('outer', outer)
-            val = st1 * np.exp(-0.5 * outer)
+            val = pdf(sampled_value, mu, cov)
             vals.append(val)
         results[i, j] = vals[1] / vals[0]
         samples.append([sampled_value, vals])
@@ -132,5 +141,18 @@ if __name__ == '__main__':
     c = plt.contour(X, Y, results, [1], zorder=1000)
     # c = plt.contour(X, Y, results, [10 ** x for x in np.arange(-2, 3, 0.5)], zorder=1000)
     plt.clabel(c, inline=1, fontsize=5)
+
+    sample_pts = np.array([generate_sample_gmm() for x in range(100)])
+    pts = sample_pts[:, 0]
+    labels = sample_pts[:, 1]
+
+    vals = []
+    for pt in pts:
+        pdfs = [pdf(pt[np.newaxis].T, mu, cov) for mu, cov in zip(mus_t, covs_t)]
+        vals.append(int((pdfs[1] / pdfs[0])[0] > 1))
+    correct = np.array(labels) == np.array(vals)
+    [plot_obs(pt, v, c) for pt, v, c in zip(pts, labels, correct)]
+    acc = correct.sum() / len(labels)
+    print ('acc', acc)
     # print(results)
     mpl_show()
