@@ -27,7 +27,7 @@ if __name__ == '__main__':
     sigma = 1  # will be squared for variance of sensor noise
     mu = 0
     reference_positions = (np.random.rand(k, 2) - 0.5) * 20
-    positions = np.random.multivariate_normal([0, 0], [[1, 0], [0, 1]])
+    positions = np.random.multivariate_normal([0, 0], [[1, 0], [0, 1]])[np.newaxis]
     noise = np.random.normal(0, sigma ** 2, 5)
     r = noise + np.sqrt(
         (reference_positions[:, 0] - positions[:, 0]) ** 2 + (reference_positions[:, 1] - positions[:, 1]) ** 2)
@@ -35,9 +35,15 @@ if __name__ == '__main__':
     # text plotting
     for a, b, c in zip(reference_positions[:, 0] - 0.5, reference_positions[:, 1] - 0.5,
                        [str(x + 1) for x in range(len(reference_positions))]):
-        plt.text(a, b, c)
+        plt.text(a, b, c, color='blue')
     # plot reference positions as x
     plt.plot(reference_positions[:, 0], reference_positions[:, 1], 'x')
     # plot position of car as circle (o)
     plt.plot(positions[:, 0], positions[:, 1], 'o')
+    # plot lines
+    for l, length in zip(reference_positions, r):
+        plt.plot([positions[0, 0], l[0]], [positions[0, 1], l[1]], 'k--')
+        plt.text((positions[0, 0]+ l[0]) / 2, (positions[0, 1] + l[1]) / 2, '%.3g' % length, color='gray')
+
+    plt.axis('equal')
     plt.show()
