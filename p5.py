@@ -31,7 +31,7 @@ def normal_pdf(v, mean, rsq):
 
 
 if __name__ == '__main__':
-    k = 3  # number of reference points
+    k = 10  # number of reference points
     n = 1  # number of observations
     sigma = 0.5  # will be squared for variance of sensor noise
     sigma_prior = 2
@@ -44,11 +44,11 @@ if __name__ == '__main__':
     r = noise + d
     # print(r)  # distances
     # text plotting
-    for a, b, c in zip(reference_positions[:, 0] - 0.5, reference_positions[:, 1] - 0.5,
-                       [str(x + 1) for x in range(len(reference_positions))]):
-        plt.text(a, b, c, color='blue')
+    # for a, b, c in zip(reference_positions[:, 0] - 0.5, reference_positions[:, 1] - 0.5,
+    #                    [str(x + 1) for x in range(len(reference_positions))]):
+    #     plt.text(a, b, c, color='blue')
     # plot reference positions as x
-    plt.plot(reference_positions[:, 0], reference_positions[:, 1], 'x')
+    # plt.plot(reference_positions[:, 0], reference_positions[:, 1], 'x')
     # plot position of car as circle (o)
     plt.plot(actual_position[:, 0], actual_position[:, 1], 'o')
     # plot lines

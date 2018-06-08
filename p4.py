@@ -121,6 +121,7 @@ if __name__ == '__main__':
     x = np.arange(-10.0, 10.0, delta)
     y = np.arange(-10.0, 10.0, delta)
     results = np.zeros((x.shape[0], y.shape[0]))
+    results_together = np.zeros((x.shape[0], y.shape[0]))
     X, Y = np.meshgrid(x, y)
     sampled_values = []
     for i in range(len(X)):
@@ -134,13 +135,15 @@ if __name__ == '__main__':
             val = pdf(sampled_value, mu, cov)
             vals.append(val)
         results[i, j] = vals[1] / vals[0]
+        results_together[i, j] = max(vals[1], vals[0])
         samples.append([sampled_value, vals])
     threshold = 1
     mpl(mus_t[0].T[0], covs_t[0], color='yellow')
     mpl(mus_t[1].T[0], covs_t[1], color='orange')
     # [plot_pt(sample, 1 if (val[1] / val[0]) > threshold else 0) for sample, val in samples]
     c = plt.contour(X, Y, results, [1], zorder=1000)
-    # c = plt.contour(X, Y, results, [10 ** x for x in np.arange(-2, 3, 0.5)], zorder=1000)
+    # c = plt.contour(X, Y, results_together, [10 ** x for x in np.arange(-2, 3, 0.5)], zorder=1000)
+    c1 = plt.contour(X, Y, results_together, zorder=1000)
     plt.clabel(c, inline=1, fontsize=5)
 
     sample_pts = np.array([generate_sample_gmm() for x in range(100)])
@@ -174,18 +177,31 @@ if __name__ == '__main__':
     y1 = np.matmul(w, x1.T)
     y2 = np.matmul(w, x2.T)
 
-
     plt.plot(np.arange(len(y1)), y1, 'x', color='b')
     plt.plot(np.arange(len(y2)), y2, 'o', color='r')
+
+    threshold = np.arange(-5, 5, 0.1)
+    current_min = 1e10
+    current_min_t = -1
+
+    for t in threshold:
+        error = 0
+        for i, x in enumerate([y1, y2]):
+            shifted = (x - t)
+            if i == 0:
+                error += len(shifted) - (shifted > 0).sum()
+            else:
+                error += len(shifted) - (shifted < 0).sum()
+
+        error_rate = error / (y1.shape[0] + y2.shape[0])
+        print (t, error_rate)
+        if error_rate < current_min:
+            current_min = error_rate
+            current_min_t = t
+    plt.plot([0, max(y1.shape[0], y2.shape[0])], [current_min_t, current_min_t])
     plt.show()
 
-    # threshold = np.arange(0, 10, 1)
-    # current_min = 1e10
-    # current_min_t = -1
-    # for t in threshold:
-    #     error_rate = lda_error_rate(threshold)
-    #     if error_rate < current_min:
-    #         current_min = error_rate
-    #         current_min_t = t
-    # print(current_min_t, current_min)
+
+
+    print(current_min_t, current_min)
     # plt.plot()
