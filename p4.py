@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
+from scipy.linalg.decomp import eigh
 from scipy.special import erfinv
 
 
@@ -73,14 +74,14 @@ def plot_obs(val, cls, accurate):
     plt.plot(val[0], val[1], 'o' if cls == 0 else 's', color='green' if accurate else 'red')
 
 
-mus = [
+mus = np.array([
     [[0., 0.]],
     [[5., 5.]]
-]
-covs = [
+])
+covs = np.array([
     [[5., 0.], [0., 10.]],
     [[1., 0.], [0., 10.]]
-]
+])
 
 n = 2
 prob = [0.5, 0.5]
@@ -110,7 +111,7 @@ if __name__ == '__main__':
     print(generate_sample_gmm())
     test_custom_normal()
     # multivar_normal([0,0], [0,0], 5000)
-
+    # QDA #
     mus_t = [np.array(m).T for m in mus]
     covs_t = [np.array(c) for c in covs]
     sampled_values = ((np.random.rand(1000, 2, 1) - 0.5) * 40)
@@ -153,6 +154,38 @@ if __name__ == '__main__':
     correct = np.array(labels) == np.array(vals)
     [plot_obs(pt, v, c) for pt, v, c in zip(pts, labels, correct)]
     acc = correct.sum() / len(labels)
-    print ('acc', acc)
+    print('acc', acc)
     # print(results)
+
     mpl_show()
+
+    # LDA #
+
+    Sb = (mus[0] - mus[1]) * (mus[0] - mus[1]).T
+    Sw = covs[0] + covs[1]
+    D, V = eigh(Sb, Sw)
+    D = np.stack(([0., 0.], D))
+    # assert (np.matmul(Sb, V) == np.matmul(np.matmul(W, Sw), V)).all()
+    ind = np.argmax(np.diag(D))
+    w = V[:, ind]
+    print(w)
+    x1 = np.array(pts[labels == 0].tolist())
+    x2 = np.array(pts[labels == 1].tolist())
+    y1 = np.matmul(w, x1.T)
+    y2 = np.matmul(w, x2.T)
+
+
+    plt.plot(np.arange(len(y1)), y1, 'x', color='b')
+    plt.plot(np.arange(len(y2)), y2, 'o', color='r')
+    plt.show()
+
+    # threshold = np.arange(0, 10, 1)
+    # current_min = 1e10
+    # current_min_t = -1
+    # for t in threshold:
+    #     error_rate = lda_error_rate(threshold)
+    #     if error_rate < current_min:
+    #         current_min = error_rate
+    #         current_min_t = t
+    # print(current_min_t, current_min)
+    # plt.plot()

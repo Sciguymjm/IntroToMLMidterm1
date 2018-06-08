@@ -47,8 +47,8 @@ classes = data[:, 1]
 # initial guesses - intentionally bad
 guess = {'lambda': []}
 for m in range(n):
-    guess['mu' + str(m)] = np.array(mus[m]) + np.random.randint(-2, 2)
-    guess['cov' + str(m)] = np.array(covs[m]) + np.random.randint(-2, 2)
+    guess['mu' + str(m)] = np.array(mus[m])
+    guess['cov' + str(m)] = np.array(covs[m])
     guess['lambda'].append(1 / float(n))
 
 
@@ -74,7 +74,8 @@ def expectation(pts, guess):
     return np.array(results)
 
 
-def maximization(ps, results, params):
+def maximization(ps, results, g):
+    params = g.copy()
     for m in range(n):
         this_class = np.array(ps[results == m].tolist())
         if this_class.shape[0] == 0:
@@ -91,7 +92,8 @@ def maximization(ps, results, params):
 
 def distance(old_params, new_params):
     dist = 0
-    for param in ['mu' + str(m) for m in range(n)]:
+    for param in ['mu0', 'mu1', 'mu2']:
+        print (param)
         for i in range(len(old_params[param])):
             dist += (old_params[param][i] - new_params[param][i])**2
     return dist ** 0.5
@@ -101,21 +103,28 @@ shift = 10
 epsilon = 0.01
 iters = 0
 true_params = guess.copy()
-while iters < 15:  # shift > epsilon:
+updated_params = guess.copy()
+distances = []
+while iters < 10:  # shift > epsilon:
     iters += 1
+    shift = distance(true_params, updated_params)
+    distances.append(shift)
 
-    updated_lbls = expectation(pts, guess)
-    updated_params = maximization(pts, updated_lbls, guess)
+    updated_lbls = expectation(pts, updated_params)
+    updated_params = maximization(pts, updated_lbls, updated_params)
 
-    shift = distance(guess, updated_params)
 
     print(f'iteration {iters}, shift {shift}')
 
-    guess = updated_params
+[plot_pt(p, c, actual) for p, c, actual in zip(pts, updated_lbls, classes)]
 
-    [plot_pt(p, c, actual) for p, c, actual in zip(pts, updated_lbls, classes)]
-
-    plt.show()
+plt.show()
 
     # time.sleep(0.25)
+plt.close('all')
+plt.plot(np.arange(len(distances)), distances)
+plt.title('Distance')
+plt.xlabel('Iteration')
+plt.ylabel('Distance')
+plt.show()
 print (guess, true_params)
