@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
+from scipy.stats import norm
 
 n = 3
 p = np.random.randint(1, 10, n)
@@ -25,21 +26,96 @@ def gmm():
     mean = mus[idx]
     cov = covs[idx]
     val = np.random.multivariate_normal(mean, cov)
-    return val, idx
+    return np.array([val, idx])
 
 
-colors = ['b', 'g', 'r', 'y']
+colors = np.array(['b', 'g', 'r', 'y', 'c', 'm'])
+# np.random.shuffle(colors)
+
+shapes = ['o', 's', 'x']
 
 
-def plot_pt(val, cls):
-    print(colors[cls], cls)
-    plt.plot(val[0], val[1], 'o', color=colors[cls])
+def plot_pt(val, cls, actual):
+    # print(colors[cls], cls)
+    plt.plot(val[0], val[1], shapes[actual], color=colors[cls])
 
 
-data = np.array([gmm() for x in range(1000)])
+data = np.array([gmm() for x in range(100)])
 pts = data[:, 0]
 classes = data[:, 1]
 
-[plot_pt(p, c) for p, c in data]
+# initial guesses - intentionally bad
+guess = {'lambda': []}
+for m in range(n):
+    guess['mu' + str(m)] = np.array(mus[m]) + np.random.randint(-2, 2)
+    guess['cov' + str(m)] = np.array(covs[m]) + np.random.randint(-2, 2)
+    guess['lambda'].append(1 / float(n))
 
-plt.show()
+
+def normal_pdf(v, mean, rsq):
+    a = 1 / np.sqrt(2 * np.math.pi * rsq)
+    p = a * np.exp(-(v - mean) ** 2 / (2 * rsq))
+    return p
+
+
+def prob(val, mu, sig, lam):
+    p = lam
+    for i in range(len(val)):
+        p *= norm.pdf(val[i], mu[i], sig[i][i])
+    return p
+
+
+def expectation(pts, guess):
+    results = []
+    for i in range(pts.shape[0]):
+        x, y = pts[i]
+        probs = [prob([x, y], guess['mu' + str(m)], guess['cov' + str(m)], guess['lambda'][m]) for m in range(n)]
+        results.append(np.argmax(probs))
+    return np.array(results)
+
+
+def maximization(ps, results, params):
+    for m in range(n):
+        this_class = np.array(ps[results == m].tolist())
+        if this_class.shape[0] == 0:
+            continue
+        x = this_class[:, 0]
+        y = this_class[:, 1]
+        params['mu' + str(m)] = [x.mean(), y.mean()]
+        params['cov' + str(m)] = [
+            [x.std(), 0],
+            [0, y.std()]
+        ]
+        params['lambda'][m] = this_class.shape[0] / ps.shape[0]
+    return params
+
+def distance(old_params, new_params):
+    dist = 0
+    for param in ['mu' + str(m) for m in range(n)]:
+        for i in range(len(old_params[param])):
+            dist += (old_params[param][i] - new_params[param][i])**2
+    return dist ** 0.5
+
+
+shift = 10
+epsilon = 0.01
+iters = 0
+true_params = guess.copy()
+while iters < 15:  # shift > epsilon:
+    iters += 1
+
+    updated_lbls = expectation(pts, guess)
+    updated_params = maximization(pts, updated_lbls, guess)
+
+    shift = distance(guess, updated_params)
+
+    print(f'iteration {iters}, shift {shift}')
+
+    guess = updated_params
+
+    [plot_pt(p, c, actual) for p, c, actual in zip(pts, updated_lbls, classes)]
+
+    plt.show()
+
+    # time.sleep(0.25)
+print (guess, true_params)
