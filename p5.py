@@ -7,12 +7,14 @@ def prior(n=1):
     sigma_y = 1
     return np.random.multivariate_normal([0, 0], [[sigma_x ** 2, 0], [0, sigma_y ** 2]], n)
 
+
 sigma_x = 1
 sigma_y = 1
 cov = [
     [sigma_x ** 2, 0],
     [0, sigma_y ** 2]
 ]
+
 
 def prior_prob(x: list or np.ndarray) -> float:
     if type(x) == list:
@@ -27,8 +29,9 @@ def normal_pdf(v, mean, rsq):
     p = a * np.exp(-(v - mean) ** 2 / (2 * rsq))
     return p
 
+
 if __name__ == '__main__':
-    k = 5  # number of reference points
+    k = 3  # number of reference points
     n = 1  # number of observations
     sigma = 0.5  # will be squared for variance of sensor noise
     sigma_prior = 2
@@ -36,7 +39,8 @@ if __name__ == '__main__':
     reference_positions = (np.random.rand(k, 2) - 0.5) * 20
     actual_position = np.random.multivariate_normal([0, 0], cov)[np.newaxis]
     noise = np.random.normal(0, sigma ** 2, k)
-    d = np.sqrt((reference_positions[:, 0] - actual_position[:, 0]) ** 2 + (reference_positions[:, 1] - actual_position[:, 1]) ** 2)
+    d = np.sqrt((reference_positions[:, 0] - actual_position[:, 0]) ** 2 + (
+            reference_positions[:, 1] - actual_position[:, 1]) ** 2)
     r = noise + d
     # print(r)  # distances
     # text plotting
@@ -63,11 +67,11 @@ if __name__ == '__main__':
             noise = np.random.normal(0, sigma ** 2, k)
             distances = []
             for s in reference_positions:
-                distances.append(np.sqrt((s[0] - coords[0])**2 + (s[1] - coords[1])**2))
-            print (r - distances)
-            val = prior_prob(coords) * np.product([normal_pdf(v, mu, sigma) for v in r - distances])
+                distances.append(np.sqrt((s[0] - coords[0]) ** 2 + (s[1] - coords[1]) ** 2))
+            print(r - distances)
+            val = prior_prob(coords) * np.product([normal_pdf(v, d, sigma) for v, d in zip(r, distances)])
             vals[i, j] = val
-    print (vals)
+    print(vals)
     plt.contour(X, Y, vals)
     plt.axis('equal')
     plt.show()
